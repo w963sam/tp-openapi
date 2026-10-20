@@ -1,0 +1,189 @@
+openapi: 3.0.3
+info:
+  title: Fruit Shop
+  version: 1.0.0
+servers:
+  - url: https://api.fruitshop.dev
+
+paths:
+  /fruits:
+    get:
+      summary: Get all fruits
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: max-calories
+          in: query
+          description: Only fruits with at most this many calories
+          schema:
+            $ref: '#/components/schemas/Calories'
+      responses:
+        '200':
+          description: List of fruits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fruit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      summary: Add a fruit
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/Fruit'
+      responses:
+        '201':
+          $ref: '#/components/responses/Fruit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /fruits/{fruitId}:
+    parameters:
+      - $ref: '#/components/parameters/FruitId'
+    put:
+      summary: Update a fruit
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/Fruit'
+      responses:
+        '200':
+          $ref: '#/components/responses/Fruit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete a fruit
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Fruit deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /fruits/{fruitId}/vitamins:
+    parameters:
+      - $ref: '#/components/parameters/FruitId'
+    get:
+      summary: Get the vitamins of a fruit
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: List of vitamins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vitamin'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    FruitId:
+      name: fruitId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+        example: 1
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  requestBodies:
+    Fruit:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Fruit'
+
+  responses:
+    Fruit:
+      description: The fruit
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Fruit'
+    BadRequest:
+      description: Invalid request
+    Unauthorized:
+      description: Missing or invalid JWT
+    NotFound:
+      description: Fruit not found
+
+  schemas:
+    Calories:
+      type: integer
+      description: Calories per 100 g
+      minimum: 0
+      maximum: 1000
+      example: 52
+    Fruit:
+      type: object
+      required: [name, calories]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          readOnly: true
+          example: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: Apple
+        calories:
+          $ref: '#/components/schemas/Calories'
+    Vitamin:
+      type: object
+      required: [name, amount]
+      properties:
+        name:
+          type: string
+          enum: [A, B1, B6, C, E, K]
+          example: C
+        amount:
+          type: number
+          description: Milligrams per 100 g
+          minimum: 0
+          maximum: 1000
+          example: 4.6
